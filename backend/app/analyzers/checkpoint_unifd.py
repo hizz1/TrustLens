@@ -1,0 +1,6 @@
+MODEL_ID = "WisconsinAIVision/UniversalFakeDetect"
+REVISION = "030495aea3300a8b54c0ec37ec7fe1dd7e63c619"
+HEAD_URL = f"https://raw.githubusercontent.com/{MODEL_ID}/{REVISION}/pretrained_weights/fc_weights.pth"
+CLIP_ID = "openai/clip-vit-large-patch14"
+CLIP_REVISION = "32bd64288804d66eefd0ccbe215aa642df71cc41"
+HEAD_SHA256 = "477100745713bcc957beb2b40859536859b6483fd6301b3b9293151b194c7847"
