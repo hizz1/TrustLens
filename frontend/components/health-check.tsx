@@ -5,7 +5,7 @@ import { API_BASE_URL, getHealth } from "@/lib/api";
 
 type State = { status: "checking" | "connected" | "offline"; message: string };
 
-export default function HealthCheck() {
+export default function HealthCheck({ compact = false }: { compact?: boolean }) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<State>({ status: "checking", message: "Contacting local backend…" });
 
@@ -19,6 +19,8 @@ export default function HealthCheck() {
       .finally(() => clearTimeout(timeout));
     return () => { active = false; clearTimeout(timeout); controller.abort(); };
   }, [attempt]);
+
+  if (compact) return <button title={state.message} onClick={() => { setState({ status: "checking", message: "Contacting local backend…" }); setAttempt(value => value + 1); }} disabled={state.status === "checking"} className={`connection-pill ${state.status === "connected" ? "text-teal-300" : "text-amber-300"}`} aria-live="polite"><span aria-hidden="true">●</span> {state.status === "connected" ? `Backend online · ${state.message.replace("API ", "").replace(" is ready", "")}` : state.status === "checking" ? "Connecting…" : "Backend offline · Retry"}</button>;
 
   return (
     <section aria-labelledby="connection-heading" className="rounded-2xl border border-white/15 bg-white/5 p-6 sm:p-8">

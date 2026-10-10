@@ -221,6 +221,66 @@ validated here. Scores are uncalibrated and do not establish authenticity.
 Sources: [official model and evaluation code](https://github.com/WisconsinAIVision/UniversalFakeDetect),
 [CVPR 2023 paper](https://openaccess.thecvf.com/content/CVPR2023/html/Ojha_Towards_Universal_Fake_Image_Detectors_That_Generalize_Across_Generative_Models_CVPR_2023_paper.html).
 
+## Reality Defender deepfake detection
+
+Select **Reality Defender API + local checks**, then **Send to Reality Defender
+and analyze** to upload the original media for remote deepfake/manipulation analysis.
+This replaces the Hive integration. BitMind and offline selection are preserved.
+Independent local visual/audio and provenance checks still run.
+
+Configure the server in the project root `.env` and restart the backend:
+
+```dotenv
+TRUSTLENS_REALITY_DEFENDER_API_KEY=
+TRUSTLENS_REALITY_DEFENDER_TIMEOUT_SECONDS=180
+TRUSTLENS_REALITY_DEFENDER_REQUEST_TIMEOUT_SECONDS=30
+TRUSTLENS_REALITY_DEFENDER_POLL_INTERVAL_SECONDS=2
+TRUSTLENS_REALITY_DEFENDER_MAX_POLL_ATTEMPTS=90
+```
+
+The key is never exposed through frontend environment variables. Requests use
+`X-API-KEY` at the fixed Reality Defender API host. TrustLens requests a signed
+upload URL, streams the file with PUT **without the API key**, then polls the
+returned request ID. Signed uploads are restricted to HTTPS Reality Defender or
+AWS S3 hosts. Redirects and upload retries are disabled. Polling stops at the
+configured attempt limit or time budget; each network operation also has a timeout.
+No background queue, database, webhook, or extra service is introduced.
+
+The API opt-in is `?detection_provider=reality_defender`. Omitted provider remains
+`offline`. The optional `reality_defender` response contains status, message,
+request ID, upload-attempt flag, vendor verdict, manipulation score, indicator,
+per-model normalized final scores, and limitations. Local `trust_score` and
+`risk_level` remain unchanged and are displayed separately.
+
+Reality Defender's ensemble manipulation score is 0–100, with **higher meaning
+more suspicious**. TrustLens shows the vendor verdict and original score. The ring
+uses `round(100 - manipulation_score)` as a labeled display indicator. It is not an
+independently calibrated authenticity probability. Only the ensemble final score
+supplies this indicator; raw model predictions are not substituted. A verdict can
+be valid without a numeric score. Not-applicable, still-processing, invalid, and
+failed responses do not produce a number. Raw upstream errors and signed URLs
+are not returned to the browser. Local results are preserved on provider failure.
+
+TrustLens submits JPG/JPEG/PNG, MP4, WAV, and MP3. Reality Defender currently
+publishes limits of 50 MB for images, 20 MB for audio, and 250 MB for video;
+TrustLens's own 100 MiB / 10-minute limits also apply. Video access depends on the
+account plan (the documented free tier supports images/audio). This integration
+reports ensemble and model detection results, not face bounding boxes, voice
+identity, or dedicated music classification. A no-face or otherwise not-applicable
+result is neutral. Model availability varies by account and media.
+
+Uploaded media is subject to Reality Defender's data handling policies and scan
+quota. A timeout or fallback cannot undo an upload. The integration does not claim
+forensic proof. Tests use mocked vendor responses and include credential isolation,
+signed URL checks, score validation, timeout/polling, and independent local results.
+A live generated-image smoke test completed successfully; it verifies API execution,
+not detection accuracy. Audio/video live inference was not separately exercised.
+
+Protocol references: [upload and authentication](https://docs.realitydefender.com/api-reference/quickstart),
+[upload limits](https://docs.realitydefender.com/api-reference/endpoint/presigned),
+[result schema](https://docs.realitydefender.com/api-reference/endpoint/get_media_detail),
+[account support](https://docs.realitydefender.com/sdks/quickstart).
+
 ## BitMind API and offline selection
 
 The dashboard defaults to **BitMind API** for image/video detection. Selecting a file

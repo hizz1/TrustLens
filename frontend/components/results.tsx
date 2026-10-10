@@ -1,7 +1,9 @@
 "use client";
 
 import { type AnalysisResponse } from "@/lib/api";
+import ScorePanel from "@/components/score-panel";
 import EvidenceSummary from "@/components/evidence-summary";
+import RealityDefenderResults from "@/components/reality-defender-results";
 
 interface ResultsProps {
   result: AnalysisResponse;
@@ -9,39 +11,6 @@ interface ResultsProps {
 }
 
 export default function Results({ result, onReset }: ResultsProps) {
-  const getRiskColor = (level: string) => {
-    switch (level) {
-      case "high":
-        return "text-red-300";
-      case "review":
-        return "text-amber-300";
-      case "low":
-        return "text-emerald-300";
-      default:
-        return "text-slate-300";
-    }
-  };
-
-  const getRiskBg = (level: string) => {
-    switch (level) {
-      case "high":
-        return "bg-red-300/15 border-red-300/30";
-      case "review":
-        return "bg-amber-300/15 border-amber-300/30";
-      case "low":
-        return "bg-emerald-300/15 border-emerald-300/30";
-      default:
-        return "bg-white/10 border-white/20";
-    }
-  };
-
-  const getScoreColor = (score: number | null) => {
-    if (score === null) return "text-slate-300";
-    if (score >= 70) return "text-emerald-300";
-    if (score >= 40) return "text-amber-300";
-    return "text-red-300";
-  };
-
   const getStatusBadge = (status: string) => {
     const colors: Record<string, string> = {
       completed: "bg-emerald-300/15 text-emerald-200",
@@ -57,7 +26,7 @@ export default function Results({ result, onReset }: ResultsProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-2xl font-semibold">TrustLens Analysis</h2>
         <button
           onClick={onReset}
@@ -68,7 +37,7 @@ export default function Results({ result, onReset }: ResultsProps) {
       </div>
 
       <p className="text-sm text-slate-300">
-        {result.provider_used === "bitmind" ? "AI-generation check with BitMind API" : result.media_type === "video" ? (result.detection_mode === "ai_generated" ? "AI-generated video check (UniFD)" : "Facial deepfake video check") : "Media authenticity check"}
+        {result.provider_used === "reality_defender" ? "Reality Defender API detection with independent local analysis" : result.provider_used === "bitmind" ? "AI-generation check with BitMind API" : result.media_type === "video" ? (result.detection_mode === "ai_generated" ? "AI-generated video check (UniFD)" : "Facial deepfake video check") : "Media authenticity check"}
         {result.visual.model_id && <span className="block text-xs text-slate-400">Visual model: {result.visual.model_id}</span>}
       </p>
       {result.fallback_reason && <p role="status" className="rounded-lg border border-amber-300/30 bg-amber-300/10 p-4 text-sm text-amber-200">
@@ -78,70 +47,11 @@ export default function Results({ result, onReset }: ResultsProps) {
         <h3 className="text-sm text-slate-300">BitMind API verdict</h3>
         <p className="mt-2 text-2xl font-semibold">{result.visual.is_ai ? "AI-generated indicators detected" : "Classified as not AI-generated"}</p>
         {result.visual.confidence != null && <p className="mt-2 text-sm text-slate-300">BitMind-reported confidence: {(result.visual.confidence * 100).toFixed(1)}%</p>}
-        <p className="mt-2 text-xs text-slate-400">This vendor verdict is not forensic proof. The Digital Trust Score below excludes this verdict and uses only available local audio and provenance evidence.</p>
+        <p className="mt-2 text-xs text-slate-400">The indicator below maps this verdict and confidence onto a 0–100 display scale. It is separate from the local Digital Trust Score and is not forensic proof.</p>
       </div>}
-      <div className="rounded-2xl border border-white/15 bg-white/5 p-8 sm:p-10">
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div>
-            <p className="mb-2 text-sm font-medium text-slate-400 uppercase tracking-wider">Digital Trust Score</p>
-            <div className="flex items-baseline gap-3">
-              <span className={`text-7xl font-bold tracking-tight ${getScoreColor(result.trust_score)}`}>
-                {result.trust_score ?? "N/A"}
-              </span>
-              {result.trust_score !== null && <span className="text-2xl text-slate-400">/ 100</span>}
-            </div>
-            <div className="mt-4">
-              <span className={`inline-block rounded-full px-4 py-1.5 text-sm font-semibold ${getRiskBg(result.risk_level)} ${getRiskColor(result.risk_level)}`}>
-                {result.risk_level === "unavailable" ? "Score Unavailable" : result.risk_level.toUpperCase() + " RISK"}
-              </span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-400 uppercase tracking-wider">Analysis Summary</p>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="rounded-lg border border-white/15 bg-white/5 p-3">
-                <p className="text-xs text-slate-400">Visual Analysis</p>
-                <p className="mt-1 font-medium text-slate-200">
-                  {result.visual.status === "completed"
-                    ? typeof result.visual.is_ai === "boolean"
-                      ? result.visual.is_ai ? "AI-generated indicators" : "Not AI-generated (API)"
-                      : result.visual.synthetic_probability !== undefined
-                      ? result.visual.synthetic_probability > 0.5
-                        ? "Elevated Risk"
-                        : "Lower Risk"
-                      : "Completed"
-                    : result.visual.status === "not_applicable"
-                    ? "Not Applicable"
-                    : "Unavailable"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/15 bg-white/5 p-3">
-                <p className="text-xs text-slate-400">Audio Analysis</p>
-                <p className="mt-1 font-medium text-slate-200">
-                  {result.audio.status === "completed"
-                    ? result.audio.synthetic_probability !== undefined
-                      ? result.audio.synthetic_probability > 0.5
-                        ? "Elevated Risk"
-                        : "Lower Risk"
-                      : "Completed"
-                    : result.audio.status === "not_applicable"
-                    ? "Not Applicable"
-                    : "Unavailable"}
-                </p>
-              </div>
-              <div className="rounded-lg border border-white/15 bg-white/5 p-3">
-                <p className="text-xs text-slate-400">Provenance</p>
-                <p className="mt-1 font-medium text-slate-200 capitalize">{result.provenance.status === "not_present" ? "Not Present" : result.provenance.status}</p>
-              </div>
-              <div className="rounded-lg border border-white/15 bg-white/5 p-3">
-                <p className="text-xs text-slate-400">Metadata</p>
-                <p className="mt-1 font-medium text-slate-200 capitalize">{result.metadata.status}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {result.reality_defender && <RealityDefenderResults result={result.reality_defender} />}
+      {result.reality_defender && <h2 className="text-xl font-semibold">Independent local evidence & provenance</h2>}
+      <ScorePanel result={result} />
 
       <EvidenceSummary result={result} />
 
@@ -169,7 +79,7 @@ export default function Results({ result, onReset }: ResultsProps) {
         <div className="grid gap-4 text-sm sm:grid-cols-2">
           <div>
             <p className="text-xs text-slate-400">Filename</p>
-            <p className="mt-1 font-mono text-slate-200">{result.filename}</p>
+            <p className="mt-1 font-mono text-slate-200 break-all">{result.filename}</p>
           </div>
           <div>
             <p className="text-xs text-slate-400">Media Type</p>

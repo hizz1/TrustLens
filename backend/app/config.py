@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     bitmind_api_key: SecretStr = SecretStr("")
     bitmind_timeout_seconds: float = Field(default=60, gt=0, le=180, allow_inf_nan=False)
     bitmind_max_upload_bytes: int = Field(default=10_000_000, gt=0, le=10_000_000)
+    reality_defender_api_key: SecretStr = SecretStr("")
+    reality_defender_timeout_seconds: float = Field(default=180, gt=0, le=600, allow_inf_nan=False)
+    reality_defender_request_timeout_seconds: float = Field(default=30, gt=0, le=60, allow_inf_nan=False)
+    reality_defender_poll_interval_seconds: float = Field(default=2, ge=0.1, le=10, allow_inf_nan=False)
+    reality_defender_max_poll_attempts: int = Field(default=90, ge=1, le=300)
     visual_enabled: bool = True
     visual_model_dir: Path = PROJECT_ROOT / "models" / "visual"
     visual_device: Literal["auto", "cpu", "cuda"] = "auto"

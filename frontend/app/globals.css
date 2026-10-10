@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
 :root { color-scheme: dark; }
-body { margin: 0; background: #0b1517; color: #f1f5f4; font-family: Arial, Helvetica, sans-serif; }
+body { margin: 0; background: #0b1517; color: #f1f5f4; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; }
 ::selection { background: #a7f3d0; color: #0b1517; }
+button, summary { cursor: pointer; }
+button:disabled { cursor: default; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid #2dd4bf; outline-offset: 4px; }
+.brand-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; background: #00cbb9; color: #073b3b; box-shadow: 0 0 24px #00cbb926; }
+.connection-pill { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #ffffff0d; background: #ffffff04; border-radius: 999px; padding: 5px 11px; font-size: 10px; }
+.landing-panel { border: 1px solid #ffffff0d; border-radius: 24px; padding: clamp(24px, 4vw, 48px); background: radial-gradient(ellipse at top left, #14b8a615, transparent 65%), #ffffff02; }
+.score-panel { display: flex; align-items: center; gap: 32px; padding: 30px; border: 1px solid #ffffff10; border-radius: 24px; background: radial-gradient(ellipse at top left, #ffb51b16, transparent 45%), radial-gradient(ellipse at bottom right, #ffb51b0d, transparent 35%), linear-gradient(130deg, #ffffff06, #ffffff02); }
+.score-ring { position: relative; width: 164px; height: 164px; flex-shrink: 0; }
+.score-ring svg { width: 100%; height: 100%; }
+.score-value { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #f1f5f4; }
+.score-value strong { font-size: 44px; line-height: 1.1; font-weight: 800; letter-spacing: -2px; }
+.score-value span { margin-top: 6px; font-size: 9px; letter-spacing: 1.5px; color: #a2afb4; }
+.risk-label { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border: 1px solid currentColor; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.score-stat { padding: 11px; background: #ffffff03; border: 1px solid #ffffff05; border-radius: 10px; }
+.score-stat > span { display: block; font-size: 10px; color: #94a3b8; margin-bottom: 4px; }
+.score-stat small { font-size: 10px; color: #94a3b8; }
+.assessment-card { display: flex; flex-direction: column; min-width: 0; padding: 22px; border-radius: 17px; border: 1px solid #ffffff10; background: #ffffff04; }
+.assessment-icon { display: grid; place-items: center; padding: 8px; background: #14b8a610; border: 1px solid #ffffff05; border-radius: 8px; }
+@media (max-width: 640px) { .score-panel { flex-direction: column; gap: 18px; padding: 24px 18px; } .score-ring { width: 144px; height: 144px; } .assessment-card { padding: 18px; } }

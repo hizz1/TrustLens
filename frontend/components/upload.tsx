@@ -17,7 +17,7 @@ export default function Upload({ onAnalysisComplete, onError }: UploadProps) {
   const [stage, setStage] = useState<string>("");
   const [dragActive, setDragActive] = useState(false);
   const [detectionMode, setDetectionMode] = useState<DetectionMode>("deepfake");
-  const [detectionProvider, setDetectionProvider] = useState<"bitmind" | "offline">("bitmind");
+  const [detectionProvider, setDetectionProvider] = useState<"bitmind" | "offline" | "reality_defender">("bitmind");
   const isVideo = selectedFile ? /\.mp4$/i.test(selectedFile.name) : false;
   const isAudio = selectedFile ? /\.(wav|mp3)$/i.test(selectedFile.name) : false;
 
@@ -129,19 +129,23 @@ export default function Upload({ onAnalysisComplete, onError }: UploadProps) {
             BitMind API (primary)
           </label>
           <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/20 p-4">
+            <input type="radio" name="provider" value="reality_defender" checked={detectionProvider === "reality_defender"} onChange={() => setDetectionProvider("reality_defender")} />
+            Reality Defender API + local checks
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-white/20 p-4">
             <input type="radio" name="provider" value="offline" checked={detectionProvider === "offline"} onChange={() => setDetectionProvider("offline")} />
             Offline models
           </label>
         </div>
         <p className="mt-3 text-sm text-slate-300">
-          {detectionProvider === "bitmind"
+          {detectionProvider === "reality_defender" ? "Sends this image, video, or audio to Reality Defender for deepfake and manipulation analysis. Results include the vendor verdict and available model scores. Video access depends on your plan. Independent local checks also run." : detectionProvider === "bitmind"
             ? "Images and videos are sent to BitMind for AI-generation detection. If the API fails or the file exceeds 10 MB, local models are used automatically. Audio detection stays local."
-            : "Detection runs on this machine using installed models. Media is not sent to BitMind."}
+            : "Detection runs on this machine using installed models. Media is not sent to detection APIs."}
         </p>
       </fieldset>
 
       {isVideo && <div className="mb-6">
-        <p className="mb-2 text-sm font-medium text-slate-200">{detectionProvider === "bitmind" ? "Offline fallback for this video" : "Video detection mode"}</p>
+        <p className="mb-2 text-sm font-medium text-slate-200">{detectionProvider === "reality_defender" ? "Independent local video check" : detectionProvider === "bitmind" ? "Offline fallback for this video" : "Video detection mode"}</p>
         <div className="flex gap-4">
           <button
             type="button"
@@ -175,9 +179,9 @@ export default function Upload({ onAnalysisComplete, onError }: UploadProps) {
 
       {selectedFile && <div className="mb-6">
         <p className="text-sm text-slate-300">Selected: {selectedFile.name}</p>
-        {isAudio && <p className="mt-2 text-xs text-slate-400">BitMind does not support audio. This file will be analyzed locally.</p>}
+        {isAudio && detectionProvider === "bitmind" && <p className="mt-2 text-xs text-slate-400">BitMind does not support audio. This file will be analyzed locally.</p>}
         <button type="button" onClick={() => processFile(selectedFile)} className="mt-4 rounded-lg bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950">
-          {detectionProvider === "bitmind" && !isAudio && selectedFile.size <= 10_000_000 ? "Send to BitMind and analyze" : "Analyze locally"}
+          {detectionProvider === "reality_defender" ? "Send to Reality Defender and analyze" : detectionProvider === "bitmind" && !isAudio && selectedFile.size <= 10_000_000 ? "Send to BitMind and analyze" : "Analyze locally"}
         </button>
       </div>}
 
@@ -220,7 +224,7 @@ export default function Upload({ onAnalysisComplete, onError }: UploadProps) {
           <svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
           </svg>
-          <span>{detectionProvider === "offline" ? "Offline mode keeps detection on this machine." : "API mode sends media to BitMind under its data handling policies. Your API key stays on the backend. Fallback does not undo an upload already sent."}</span>
+          <span>{detectionProvider === "offline" ? "Offline mode keeps detection on this machine." : detectionProvider === "reality_defender" ? "Reality Defender mode uploads the original file to its storage for analysis under its data handling policies and scan quota. The API key stays on the backend. Failed requests do not undo an upload." : "API mode sends media to BitMind under its data handling policies. Your API key stays on the backend. Fallback does not undo an upload already sent."}</span>
         </p>
       </div>
     </div>

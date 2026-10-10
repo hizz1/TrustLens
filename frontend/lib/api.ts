@@ -5,8 +5,9 @@ export type HealthResponse = {
 };
 
 export type AnalysisResponse = {
-  detection_provider: "offline" | "bitmind";
-  provider_used: "offline" | "bitmind";
+  detection_provider: "offline" | "bitmind" | "reality_defender";
+  provider_used: "offline" | "bitmind" | "reality_defender";
+  reality_defender?: RealityDefenderResult | null;
   fallback_reason: string | null;
   detection_mode: "deepfake" | "ai_generated";
   analysis_id: string;
@@ -55,6 +56,18 @@ export type AnalysisResponse = {
   risk_level: "high" | "review" | "low" | "unavailable";
 };
 
+export type RealityDefenderResult = {
+  status: "completed" | "not_applicable" | "unavailable";
+  message: string;
+  request_id: string | null;
+  upload_attempted: boolean;
+  verdict: string;
+  manipulation_score: number | null;
+  indicator_score: number | null;
+  models: Array<{ name: string; status: string; manipulation_score: number | null }>;
+  limitations: string[];
+};
+
 export const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"
 ).replace(/\/+$/, "");
@@ -71,7 +84,7 @@ export async function getHealth(signal: AbortSignal): Promise<HealthResponse> {
   return data as HealthResponse;
 }
 
-export async function analyzeFile(file: File, signal: AbortSignal, detectionMode: "deepfake" | "ai_generated" = "deepfake", detectionProvider: "offline" | "bitmind" = "offline"): Promise<AnalysisResponse> {
+export async function analyzeFile(file: File, signal: AbortSignal, detectionMode: "deepfake" | "ai_generated" = "deepfake", detectionProvider: "offline" | "bitmind" | "reality_defender" = "offline"): Promise<AnalysisResponse> {
   const formData = new FormData();
   formData.append("file", file);
 

@@ -25,13 +25,23 @@ def analyze(
     request: Request,
     file: UploadFile = File(...),
     detection_mode: Literal["deepfake", "ai_generated"] = Query(default="deepfake", description="Offline video detection: facial deepfake or AI-generated frames (UniFD)."),
-    detection_provider: Literal["offline", "bitmind"] = Query(default="offline", description="Explicitly choose bitmind to send image/video to the external API, with local fallback.")
+    detection_provider: Literal["offline", "bitmind", "reality_defender"] = Query(default="offline", description="Explicitly opt into BitMind or Reality Defender remote submission. Reality Defender supplements independent local checks.")
 ) -> AnalysisResponse:
     """Prepare a single file. Blocking decoding runs in FastAPI's worker thread."""
     try:
         result = prepare_media(file, request.app.state.settings)
         result.detection_mode = detection_mode if result.media_type == "video" else "deepfake"
         result.detection_provider = detection_provider
+        if detection_provider == "reality_defender":
+            try:
+                result.reality_defender = request.app.state.reality_defender_analyzer.analyze(result)
+                if result.reality_defender.status in ("completed", "not_applicable"):
+                    result.provider_used = "reality_defender"
+                else:
+                    result.fallback_reason = result.reality_defender.message + " Local analysis is preserved."
+                result.findings.append("Reality Defender: " + result.reality_defender.message)
+            except Exception:
+                result.fallback_reason = "Reality Defender could not complete detection; local analysis is preserved."
         if detection_provider == "bitmind":
             try:
                 result.visual = request.app.state.bitmind_analyzer.analyze(result)
@@ -69,6 +79,8 @@ def analyze(
             result.provenance = ProvenanceResult(status="error", verified=False, details=[f"Provenance verification failed ({type(exc).__name__})."])
         result.findings.extend(result.provenance.details)
         fuse_evidence(result)
+        if result.reality_defender is not None:
+            result.limitations.extend(result.reality_defender.limitations)
         return result
     finally:
         file.file.close()

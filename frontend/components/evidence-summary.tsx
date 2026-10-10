@@ -19,18 +19,18 @@ function Icon({ kind }: { kind: "visual" | "audio" | "provenance" | "metadata" }
   return <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">{paths[kind]}</svg>;
 }
 
-function Card({ kind, title, label, description, tone, children }: {
+function Card({ kind, title, label, description, tone, status, children }: {
   kind: "visual" | "audio" | "provenance" | "metadata";
-  title: string; label: string; description: string; tone: Tone; children?: ReactNode;
+  status: string; title: string; label: string; description: string; tone: Tone; children?: ReactNode;
 }) {
-  return <article className={`flex min-w-0 flex-col rounded-2xl border p-5 transition-colors hover:bg-white/[0.06] ${palette[tone].surface}`}>
+  return <article className="assessment-card">
     <div className="flex items-center justify-between gap-3">
-      <h4 className="text-xs font-medium uppercase tracking-widest text-slate-400">{title}</h4>
-      <span className={`rounded-xl bg-white/5 p-2.5 ${palette[tone].text}`}><Icon kind={kind} /></span>
+      <h4 className="flex min-w-0 items-center gap-3 text-sm font-bold"><span className={`assessment-icon ${palette[tone].text}`}><Icon kind={kind} /></span>{title}</h4>
+      <span className={`shrink-0 rounded border border-current/10 bg-white/5 px-2 py-1 text-[9px] font-semibold uppercase ${palette[tone].text}`}>{status === "not_applicable" ? "N/A" : status.replaceAll("_", " ")}</span>
     </div>
-    <p className={`mt-4 text-lg font-semibold leading-snug ${palette[tone].text}`}>{label}</p>
-    <p className="mt-2 text-sm leading-relaxed text-slate-400">{description}</p>
-    {children && <div className="mt-auto pt-5">{children}</div>}
+    <p className={`mt-5 text-sm font-semibold ${palette[tone].text}`}>{label}</p>
+    <p className="mt-2 text-xs leading-relaxed text-slate-400">{description}</p>
+    {children && <div className="mt-auto pt-4">{children}</div>}
   </article>;
 }
 
@@ -63,35 +63,24 @@ export default function EvidenceSummary({ result }: { result: AnalysisResponse }
   const elevatedFrames = frames.filter(frame => frame.synthetic_probability >= 0.5).length;
   const confidence = visual.status === "completed" && typeof visual.confidence === "number" ? visual.confidence : null;
 
-  return <section aria-labelledby="evidence-heading" className="overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-br from-white/[0.06] via-white/[0.02] to-emerald-950/20">
-    <div className="border-b border-white/10 px-6 py-6 sm:px-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-300">The evidence at a glance</p>
-          <h3 id="evidence-heading" className="text-2xl font-semibold tracking-tight">Key findings</h3>
-        </div>
-        <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs text-slate-300">
-          {result.provider_used === "bitmind" ? "BitMind API + local checks" : "Local model analysis"}
-        </span>
-      </div>
-      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-slate-400">Four perspectives on your media. Detection signals, source credentials, and file information tell different parts of the story.</p>
-    </div>
-
-    <div className="space-y-5 p-6 sm:p-8">
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card kind="visual" title="Visual evidence" label={apiVerdict ? visual.is_ai ? "Flagged as AI-generated" : "Classified as not AI" : visualLabel} tone={visualTone}
+  return <section aria-label="Analysis evidence">
+    <div className="space-y-5">
+      <div className="grid gap-5 md:grid-cols-2">
+        <Card kind="visual" status={visual.status} title="Visual Deepfake Assessment" label={apiVerdict ? visual.is_ai ? "Flagged as AI-generated" : "Classified as not AI" : visualLabel} tone={visualTone}
           description={apiVerdict ? "BitMind’s whole-file verdict. This does not establish authenticity." : visualScore !== null ? "The local detector found visual patterns associated with synthetic media." : visual.status === "not_applicable" ? "This file has no visual content to assess." : "The visual detector could not produce a usable result."}>
           {apiVerdict && confidence !== null ? <Meter value={confidence} label="Vendor confidence" tone={visualTone} /> : visualScore !== null ? <Meter value={visualScore} label="Synthetic model score" tone={visualTone} /> : <p className="text-xs text-slate-500">No visual score available</p>}
+          <div className="mt-4 grid grid-cols-2 gap-2 text-xs"><div className="score-stat"><span>Model confidence</span><p>{confidence !== null ? `${(confidence * 100).toFixed(1)}%` : "Unavailable"}</p></div><div className="score-stat"><span>Inference device</span><p className="text-teal-300 uppercase">{apiVerdict ? "Remote API" : visual.device ?? "Unavailable"}</p></div></div>
+          {visual.model_id && <p className="mt-4 break-all border-t border-white/5 pt-3 text-[10px] text-slate-400">Model: {visual.model_id}</p>}
         </Card>
-        <Card kind="audio" title="Audio evidence" label={audioScore !== null ? audioScore >= 0.5 ? "Synthetic speech indicators" : "Low synthetic indicators" : audio.status === "not_applicable" ? "No applicable audio" : "Audio check unavailable"} tone={audioTone}
+        <Card kind="audio" status={audio.status} title="Audio Deepfake Assessment" label={audioScore !== null ? audioScore >= 0.5 ? "Synthetic speech indicators" : "Low synthetic indicators" : audio.status === "not_applicable" ? "No applicable audio" : "Audio check unavailable"} tone={audioTone}
           description={audioScore !== null ? "Speech was assessed independently by the local audio model." : audio.status === "not_applicable" ? "No audio evidence contributes to this result. This is neutral." : "Audio could not be assessed; it is excluded from scoring."}>
           {audioScore !== null ? <Meter value={audioScore} label="Synthetic model score" tone={audioTone} /> : <span className="text-xs text-slate-500">Excluded from the score</span>}
         </Card>
-        <Card kind="provenance" title="Source credentials" label={verified ? "Credentials verified" : provenance.status === "invalid" ? "Credential check failed" : provenance.status === "not_present" ? "No credentials found" : "Could not verify"} tone={provenanceTone}
+        <Card kind="provenance" status={provenance.status} title="Content Credentials (C2PA)" label={verified ? "Credentials verified" : provenance.status === "invalid" ? "Credential check failed" : provenance.status === "not_present" ? "No credentials found" : "Could not verify"} tone={provenanceTone}
           description={verified ? "Content Credentials passed verification. Provenance alone does not prove that content is real." : provenance.status === "invalid" ? "The available credentials failed verification. Review the source and original file." : "Missing or unverifiable credentials are neutral, not evidence of manipulation."}>
           <span className={`inline-flex rounded-full border border-current/20 px-2.5 py-1 text-[11px] ${palette[provenanceTone].text}`}>{verified ? "C2PA verified" : provenance.status === "invalid" ? "Needs review" : "Neutral evidence"}</span>
         </Card>
-        <Card kind="metadata" title="File information" label={result.metadata.status === "completed" ? "File inspected" : "Details unavailable"} tone="slate"
+        <Card kind="metadata" status={result.metadata.status} title="Technical Metadata & Integrity" label={result.metadata.status === "completed" ? "File inspected" : "Details unavailable"} tone="slate"
           description={result.metadata.status === "completed" ? "Technical properties were read from the file. Metadata alone cannot establish authenticity." : "File information could not be fully read. Missing metadata is neutral."}>
           <div className="flex flex-wrap gap-2 text-[11px] text-slate-300">
             <span className="rounded-md bg-white/5 px-2 py-1 uppercase">{result.media_type}</span>

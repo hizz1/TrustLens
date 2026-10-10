@@ -2,6 +2,7 @@ from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from app.reality_defender_schemas import RealityDefenderResult
 
 
 class HealthResponse(BaseModel):
@@ -84,8 +85,9 @@ class PreprocessingResult(BaseModel):
 
 
 class AnalysisResponse(BaseModel):
-    detection_provider: Literal["offline", "bitmind"] = "offline"
-    provider_used: Literal["offline", "bitmind"] = "offline"
+    detection_provider: Literal["offline", "bitmind", "reality_defender"] = "offline"
+    provider_used: Literal["offline", "bitmind", "reality_defender"] = "offline"
+    reality_defender: RealityDefenderResult | None = None
     fallback_reason: str | None = None
     detection_mode: Literal["deepfake", "ai_generated"] = "deepfake"
     analysis_id: UUID

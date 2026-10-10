@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "TrustLens | Media authenticity",
-  description: "A local-first media authenticity prototype. Phase 1 project foundation.",
+  description: "Multimodal deepfake detection, media analysis, and Content Credentials inspection.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -12,6 +12,7 @@ from app.api.upload_limit import UploadLimitMiddleware
 from app.analyzers.visual import VisualAnalyzer
 from app.analyzers.unifd import UniFDAnalyzer
 from app.analyzers.bitmind import BitMindAnalyzer
+from app.analyzers.reality_defender import RealityDefenderAnalyzer
 from app.analyzers.audio import AudioAnalyzer
 from app.config import Settings
 from app.schemas import ErrorDetail, ErrorResponse
@@ -37,6 +38,7 @@ def create_app(settings: Settings | None = None) -> CORSMiddleware:
     api.state.visual_analyzer = VisualAnalyzer(settings)
     api.state.unifd_analyzer = UniFDAnalyzer(settings)
     api.state.bitmind_analyzer = BitMindAnalyzer(settings)
+    api.state.reality_defender_analyzer = RealityDefenderAnalyzer(settings)
     api.state.audio_analyzer = AudioAnalyzer(settings)
     api.add_middleware(UploadLimitMiddleware, max_bytes=settings.max_upload_bytes + 64 * 1024)
     api.include_router(router)
